@@ -25,7 +25,7 @@ def imgToFloat(img):
 
 df = pd.DataFrame(data={
     'Filename': ['B02.jpg'],
-    'Fragments': [[[0, 0, 199, 199], [600, 600, 799, 799]]]
+    'Fragments': [[[0, 0, 199, 199], [200, 200, 399, 399], [400, 400, 599, 599], [600, 600, 799, 799]]]
 })
 
 files = []
@@ -85,10 +85,6 @@ document.add_heading('Laboratorium 02 - Zadanie 3', 0)
 
 for file in files:
     document.add_heading('Plik - {}'.format(file), 2)
-
-    memfile = BytesIO()
-    fig.savefig(memfile)
-
-    document.add_picture(memfile, width=Inches(6))
+    document.add_picture(file, width=Inches(6))
 
 document.save('lab02.docx')
