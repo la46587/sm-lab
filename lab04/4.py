@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 
-def imgToFloat(img):
+def imgToFloat(img):  # konwersja obrazu na float
     if np.issubdtype(img.dtype, np.floating):
         img = img[:, :, :3]
         return img
@@ -16,17 +16,17 @@ def imgToFloat(img):
         return img
 
 
-def generatePalette(N):
+def generatePalette(N):  # generowanie palety
     pallete = np.linspace(0, 1, N).reshape(N, 1)
     return pallete
 
 
-def colorFit(pixel, palette):
+def colorFit(pixel, palette):  # najbliższy kolor
     closestColor = palette[np.argmin(np.linalg.norm(palette - pixel, axis=1))]
     return closestColor
 
 
-def kwantColorFit(img, palette):
+def kwantColorFit(img, palette):  # kwantyzacja
     outImg = img.copy()
     for w in range(img.shape[0]):
         for k in range(img.shape[1]):
@@ -34,14 +34,14 @@ def kwantColorFit(img, palette):
     return outImg
 
 
-def ditheringRandom(img):
+def ditheringRandom(img):  # dithering losowy
     height, width = img.shape[:2]
     r = np.random.rand(height, width)
     img = (img[:, :, 0] >= r) * 1
     return img
 
 
-def ditheringOrganized(img, palette):
+def ditheringOrganized(img, palette):  # dithering zorganizowany
     M2 = np.array([
         [0, 8, 2, 10],
         [12, 4, 14, 6],
@@ -62,7 +62,7 @@ def ditheringOrganized(img, palette):
     return img
 
 
-def ditheringFloydSteinberg(img, palette):
+def ditheringFloydSteinberg(img, palette):  # dithering Floyda-Steinberga
     height, width = img.shape[:2]
     for y in range(height):
         for x in range(width):
