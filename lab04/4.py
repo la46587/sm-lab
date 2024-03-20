@@ -41,7 +41,24 @@ def ditheringRandom(img):
     return img
 
 
-def ditheringOrganized(img):
+def ditheringOrganized(img, palette):
+    M2 = np.array([
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+    ])
+    n = 2
+    Mpre = (M2 + 1) / (2 * n) ** 2 - 0.5
+
+    height, width = img.shape[:2]
+    tiledM = np.tile(Mpre, (height // n + 1, width // n + 1))
+    tiledM = tiledM[:height, :width]
+
+    for y in range(height):
+        for x in range(width):
+            newPixel = img[y, x] + (tiledM[y, x])
+            img[y, x] = colorFit(newPixel, palette)
     return img
 
 
@@ -107,7 +124,7 @@ for image in images:
     for palette in palettes:
         imgQuantized = kwantColorFit(img.copy(), generatePalette(2 ** palette))
         imgDitherRandom = ditheringRandom(img.copy())
-        imgDitherOrganized = ditheringOrganized(img.copy())
+        imgDitherOrganized = ditheringOrganized(img.copy(), generatePalette(2 ** palette))
         imgDitherFloydSteinberg = ditheringFloydSteinberg(img.copy(), generatePalette(2 ** palette))
         memfile = BytesIO()
 
@@ -148,7 +165,6 @@ for image in images:
             axs[1, 1].set_title('Floyd-Steinberg')
             axs[1, 1].axis('off')
 
-        plt.show()
         plt.savefig(memfile, bbox_inches='tight')
         document.add_heading('{} - dithering {}-bit'.format(image, palette), 2)
         document.add_picture(memfile, width=Inches(4.3))
@@ -168,7 +184,7 @@ for image in images:
             paletteName = '16 colors'
 
         imgQuantized = kwantColorFit(img.copy(), palette)
-        imgDitherOrganized = ditheringOrganized(img.copy())
+        imgDitherOrganized = ditheringOrganized(img.copy(), palette)
         imgDitherFloydSteinberg = ditheringFloydSteinberg(img.copy(), palette)
 
         memfile = BytesIO()
