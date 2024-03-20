@@ -1,3 +1,6 @@
+from docx import Document
+from docx.shared import Inches
+from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -32,103 +35,165 @@ def kwantColorFit(img, palette):
 
 
 def ditheringRandom(img):
-    r = np.random.rand(*img.shape)
-
-    for i in range(img.shape[0]):
-        for j in range(img.shape[1]):
-            if img[i, j][0] >= r[i, j][0]:
-                img[i, j] = 1
-            else:
-                img[i, j] = 0
+    height, width = img.shape[:2]
+    r = np.random.rand(height, width)
+    img = (img[:, :, 0] >= r) * 1
     return img
 
 
 def ditheringOrganized(img):
-    pass
+    return img
 
 
-def ditheringFloydSteinberg(img):
-    pass
+def ditheringFloydSteinberg(img, palette):
+    height, width = img.shape[:2]
+    for y in range(height):
+        for x in range(width):
+            oldPixel = img[y, x].copy()
+            newPixel = colorFit(oldPixel, palette)
+            img[y, x] = newPixel
+            qError = oldPixel - newPixel
+            if x + 1 < width:
+                img[y, x + 1] = img[y, x + 1] + qError * 7 / 16
+            if x - 1 >= 0 and y + 1 < height:
+                img[y + 1, x - 1] = img[y + 1, x - 1] + qError * 3 / 16
+            if y + 1 < height:
+                img[y + 1, x] = img[y + 1, x] + qError * 5 / 16
+            if x + 1 < width and y + 1 < height:
+                img[y + 1, x + 1] = img[y + 1, x + 1] + qError * 1 / 16
+    return img
 
 
 palette8 = np.array([
-        [0.0, 0.0, 0.0,],
-        [0.0, 0.0, 1.0,],
-        [0.0, 1.0, 0.0,],
-        [0.0, 1.0, 1.0,],
-        [1.0, 0.0, 0.0,],
-        [1.0, 0.0, 1.0,],
-        [1.0, 1.0, 0.0,],
-        [1.0, 1.0, 1.0,],
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 1.0, 1.0],
+        [1.0, 0.0, 0.0],
+        [1.0, 0.0, 1.0],
+        [1.0, 1.0, 0.0],
+        [1.0, 1.0, 1.0],
 ])
 
 palette16 = np.array([
-        [0.0, 0.0, 0.0,],
-        [0.0, 1.0, 1.0,],
-        [0.0, 0.0, 1.0,],
-        [1.0, 0.0, 1.0,],
-        [0.0, 0.5, 0.0,],
-        [0.5, 0.5, 0.5,],
-        [0.0, 1.0, 0.0,],
-        [0.5, 0.0, 0.0,],
-        [0.0, 0.0, 0.5,],
-        [0.5, 0.5, 0.0,],
-        [0.5, 0.0, 0.5,],
-        [1.0, 0.0, 0.0,],
-        [0.75, 0.75, 0.75,],
-        [0.0, 0.5, 0.5,],
-        [1.0, 1.0, 1.0,],
-        [1.0, 1.0, 0.0,]
+        [0.0, 0.0, 0.0],
+        [0.0, 1.0, 1.0],
+        [0.0, 0.0, 1.0],
+        [1.0, 0.0, 1.0],
+        [0.0, 0.5, 0.0],
+        [0.5, 0.5, 0.5],
+        [0.0, 1.0, 0.0],
+        [0.5, 0.0, 0.0],
+        [0.0, 0.0, 0.5],
+        [0.5, 0.5, 0.0],
+        [0.5, 0.0, 0.5],
+        [1.0, 0.0, 0.0],
+        [0.75, 0.75, 0.75],
+        [0.0, 0.5, 0.5],
+        [1.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0]
 ])
 
-# fig, axs = plt.subplots(2, 2)
-# fig.tight_layout()
-#
-# img = cv2.imread('GS_0002.png')
-# img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-# img = imgToFloat(img)
-#
-# axs[0, 0].imshow(img)
-# axs[0, 0].set_title('Original')
-#
-# palette = generatePalette(2)
-# img1 = kwantColorFit(img, palette)
-# axs[0, 1].imshow(img1)
-# axs[0, 1].set_title('1-bit')
-#
-# palette = generatePalette(4)
-# img2 = kwantColorFit(img, palette)
-# axs[1, 0].imshow(img2)
-# axs[1, 0].set_title('2-bit')
-#
-# palette = generatePalette(16)
-# img4 = kwantColorFit(img, palette)
-# axs[1, 1].imshow(img4)
-# axs[1, 1].set_title('4-bit')
-# plt.show()
-#
-# plt.close(fig)
-# img8 = kwantColorFit(img, palette8)
-# plt.imshow(img8)
-# plt.show()
-#
-# img16 = kwantColorFit(img, palette16)
-# plt.imshow(img16)
-# plt.show()
+document = Document()
+document.add_heading('Laboratorium 04', 0)
 
-img = cv2.imread('GS_0002.png')
-img = imgToFloat(img)
-plt.imshow(img)
-plt.show()
+images = ['GS_0001.tif', 'GS_0002.png', 'GS_0003.png']
+palettes = [1, 2, 4]
 
-img1 = kwantColorFit(img, generatePalette(2))
-plt.imshow(img1)
-plt.show()
+for image in images:
+    img = cv2.imread(image)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = imgToFloat(img)
+    for palette in palettes:
+        imgQuantized = kwantColorFit(img.copy(), generatePalette(2 ** palette))
+        imgDitherRandom = ditheringRandom(img.copy())
+        imgDitherOrganized = ditheringOrganized(img.copy())
+        imgDitherFloydSteinberg = ditheringFloydSteinberg(img.copy(), generatePalette(2 ** palette))
+        memfile = BytesIO()
 
-imgDitherRandom = ditheringRandom(img)
-plt.imshow(imgDitherRandom)
-plt.show()
+        if palette == 1:
+            fig, axs = plt.subplots(2, 3)
+            fig.tight_layout()
 
-imgDitherOrganized = ditheringOrganized(img)
-plt.imshow(imgDitherOrganized)
-plt.show()
+            axs[0, 0].imshow(img)
+            axs[0, 0].set_title('Original')
+            axs[0, 0].axis('off')
+            axs[0, 1].imshow(imgQuantized)
+            axs[0, 1].set_title('Quantization')
+            axs[0, 1].axis('off')
+            axs[0, 2].imshow(imgDitherOrganized)
+            axs[0, 2].set_title('Organized')
+            axs[0, 2].axis('off')
+            axs[1, 0].axis('off')
+            axs[1, 1].imshow(imgDitherRandom, cmap=plt.cm.gray)
+            axs[1, 1].set_title('Random')
+            axs[1, 1].axis('off')
+            axs[1, 2].imshow(imgDitherFloydSteinberg)
+            axs[1, 2].set_title('Floyd-Steinberg')
+            axs[1, 2].axis('off')
+        else:
+            fig, axs = plt.subplots(2, 2)
+            fig.tight_layout()
+
+            axs[0, 0].imshow(img)
+            axs[0, 0].set_title('Original')
+            axs[0, 0].axis('off')
+            axs[0, 1].imshow(imgDitherOrganized)
+            axs[0, 1].set_title('Organized')
+            axs[0, 1].axis('off')
+            axs[1, 0].imshow(imgQuantized)
+            axs[1, 0].set_title('Quantization')
+            axs[1, 0].axis('off')
+            axs[1, 1].imshow(imgDitherFloydSteinberg)
+            axs[1, 1].set_title('Floyd-Steinberg')
+            axs[1, 1].axis('off')
+
+        plt.show()
+        plt.savefig(memfile, bbox_inches='tight')
+        document.add_heading('{} - dithering {}-bit'.format(image, palette), 2)
+        document.add_picture(memfile, width=Inches(4.3))
+        plt.close(fig)
+
+images = ['SMALL_0001.tif', 'SMALL_0004.jpg', 'SMALL_0006.jpg', 'SMALL_0009.jpg']
+palettes = [palette8, palette16]
+
+for image in images:
+    img = cv2.imread(image)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = imgToFloat(img)
+    for palette in palettes:
+        if len(palette) == len(palette8):
+            paletteName = '8 colors'
+        else:
+            paletteName = '16 colors'
+
+        imgQuantized = kwantColorFit(img.copy(), palette)
+        imgDitherOrganized = ditheringOrganized(img.copy())
+        imgDitherFloydSteinberg = ditheringFloydSteinberg(img.copy(), palette)
+
+        memfile = BytesIO()
+        fig, axs = plt.subplots(2, 2)
+        fig.tight_layout()
+
+        axs[0, 0].imshow(img)
+        axs[0, 0].set_title('Original')
+        axs[0, 0].axis('off')
+
+        axs[0, 1].imshow(imgDitherOrganized)
+        axs[0, 1].set_title('Organized')
+        axs[0, 1].axis('off')
+
+        axs[1, 0].imshow(imgQuantized)
+        axs[1, 0].set_title('Quantization')
+        axs[1, 0].axis('off')
+
+        axs[1, 1].imshow(imgDitherFloydSteinberg)
+        axs[1, 1].set_title('Floyd-Steinberg')
+        axs[1, 1].axis('off')
+
+        plt.savefig(memfile, bbox_inches='tight')
+        document.add_heading('{} - dithering {}'.format(image, paletteName), 2)
+        document.add_picture(memfile, width=Inches(4.3))
+        plt.close(fig)
+
+document.save('lab04.docx')
