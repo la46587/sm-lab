@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
+
 def imgToUInt8(img):
     if np.issubdtype(img.dtype, np.integer) or np.issubdtype(img.dtype, np.unsignedinteger):
         return img
@@ -10,12 +11,14 @@ def imgToUInt8(img):
         img = img.astype('uint8')
         return img
 
+
 def imgToFloat(img):
     if np.issubdtype(img.dtype, np.floating):
         return img
     else:
         img = img / 255.0
         return img
+
 
 imgO = cv2.imread('B01.png')
 imgO = cv2.cvtColor(imgO, cv2.COLOR_BGR2RGB)

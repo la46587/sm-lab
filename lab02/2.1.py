@@ -19,6 +19,7 @@ def imgToFloat(img):
         img = img / 255.0
         return img
 
+
 img1 = cv2.imread('B01.png')
 img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
 plt.imshow(img1)
