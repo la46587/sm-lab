@@ -88,7 +88,6 @@ for image in images:
 
     imgEncodedRLE = encodeRLE(img.copy())
     compressionRatio, compressionPercentage = calculateCompressionRatio(img, imgEncodedRLE)
-    print(f'Stopień kompresji RLE: {compressionRatio:.4f} ({compressionPercentage:.2f}%)')
     imgDecodedRLE = decodeRLE(imgEncodedRLE, img.shape)
 
     memfile = BytesIO()
@@ -105,7 +104,6 @@ for image in images:
 
     imgEncodedByteRun = encodeByteRun(img.copy())
     compressionRatio, compressionPercentage = calculateCompressionRatio(img, imgEncodedByteRun)
-    print(f'Stopień kompresji ByteRun: {compressionRatio:.4f} ({compressionPercentage:.2f}%)')
     imgDecodedByteRun = decodeByteRun(imgEncodedByteRun).reshape(img.shape)
 
     memfile = BytesIO()
