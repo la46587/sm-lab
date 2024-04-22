@@ -9,8 +9,8 @@ import soundfile as sf
 
 
 def quantize(signal, targetBits):
-    targetMax = 2 ** (targetBits - 1)
-    quantizedSignal = np.round(signal / targetMax) * targetMax
+    targetMax = 2 ** targetBits - 1
+    quantizedSignal = np.round(signal * (targetMax / 2)) / (targetMax / 2)
     return quantizedSignal
 
 
@@ -43,14 +43,50 @@ def decodeMuLaw(y, quantizationLevel, mu=255):
 def encodeDPCM(x, quantizationLevel):
     y = np.zeros(x.shape)
     e = 0
-    for i in range(0, x.shape[0]):
+    for i in range(x.shape[0]):
         y[i] = quantize(x[i] - e, quantizationLevel)
         e += y[i]
     return y
 
 
-def decodeDPCM():
-    pass
+def decodeDPCM(y):
+    x = np.zeros(y.shape)
+    x[-1] = 0
+    for i in range(y.shape[0]):
+        x[i] = y[i] + x[i - 1]
+    return x
+
+
+def predictor(x):
+    if len(x) == 0:
+        return 0
+    return np.median(x)
+
+
+def encodeDPCMpred(x, quantizationLevel, n=30):
+    y = np.zeros(x.shape)
+    xp = np.zeros(x.shape)
+    e = 0
+    for i in range(1, x.shape[0]):
+        y[i] = quantize(x[i] - e, quantizationLevel)
+        xp[i] = y[i] + e
+        idx = (np.arange(i - n, i, 1, dtype=int) + 1)
+        idx = np.delete(idx, idx < 0)
+        e = predictor(xp[idx])
+    return y
+
+
+def decodeDCPMpred(y, n=30):
+    x = np.zeros(y.shape)
+    xp = np.zeros(y.shape)
+    e = 0
+    for i in range(1, y.shape[0]):
+        xp[i] = y[i] + e
+        x[i] = xp[i]
+        idx = np.arange(i - n, i, 1, dtype=int) + 1
+        idx = np.delete(idx, idx < 0)
+        e = predictor(xp[idx])
+    return x
 
 
 document = Document()
@@ -60,47 +96,36 @@ singHigh, singHighFs = sf.read('sing_high2.wav', dtype='float32')
 singMedium, singMediumFs = sf.read('sing_medium1.wav', dtype='float32')
 singLow, singLowFs = sf.read('sing_low1.wav', dtype='float32')
 
-# sings = [singHigh, singMedium, singLow]
-# singsFs = [singHighFs, singMediumFs, singLowFs]
-# for sing, singFs in zip(sings, singsFs):
-#     originalSing = sing.copy()
-#     plt.plot(np.arange(0, originalSing.shape[0]) / singFs, originalSing)
-#     plt.show()
-#
-#     compressedALaw = encodeALaw(originalSing)
-#     decompressedALaw = decodeALaw(compressedALaw)
-#
-#     plt.plot(np.arange(0, decompressedALaw.shape[0]) / singFs, decompressedALaw)
-#     plt.show()
+sings = [singHigh, singMedium, singLow]
+singsNames = ['singHigh', 'singMedium', 'singLow']
+singsFs = [singHighFs, singMediumFs, singLowFs]
+quantizationLevels = [8, 7, 6, 5, 4, 3, 2]
+i = [0, 1, 2, 3, 4, 5, 6]
+for sing, singName, singFs in zip(sings, singsNames, singsFs):
+    document.add_heading('{} - A-law, mu-law, DPCM bez predykcji, DPCM z predykcją'.format(singName), 2)
+    for quantizationLevel in quantizationLevels:
+        originalSing = sing.copy()
 
-x = np.linspace(-1, 1, 1000)
-y = 0.9 * np.sin(np.pi * x * 4)
+        compressedALaw = encodeALaw(originalSing, quantizationLevel)
+        decompressedALaw = decodeALaw(compressedALaw, quantizationLevel)
+        compressedMuLaw = encodeMuLaw(originalSing, quantizationLevel)
+        decompressedMuLaw = decodeMuLaw(compressedMuLaw, quantizationLevel)
+        compressedDPCM = encodeDPCM(originalSing, quantizationLevel)
+        decompressedDPCM = decodeDPCM(compressedDPCM)
+        compressedDPCMpred = encodeDPCMpred(originalSing, quantizationLevel)
+        decompressedDPCMpred = decodeDCPMpred(compressedDPCMpred)
 
-plt.plot(x, y)
-plt.xlim(-1, -0.75)
-plt.ylim(0, 1)
-plt.show()
+        memfile = BytesIO()
+        plt.plot(np.arange(0, originalSing.shape[0]) / singFs, originalSing, color='blue')
+        plt.plot(np.arange(0, decompressedALaw.shape[0]) / singFs, decompressedALaw, color='red')
+        plt.plot(np.arange(0, decompressedMuLaw.shape[0]) / singFs, decompressedMuLaw, color='green')
+        plt.plot(np.arange(0, decompressedDPCM.shape[0]) / singFs, decompressedDPCM, color='purple')
+        plt.plot(np.arange(0, decompressedDPCMpred.shape[0]) / singFs, decompressedDPCMpred, color='black')
+        plt.xlim(1, 1.01)
+        plt.title('{}-bit quantization'.format(quantizationLevel))
+        plt.legend(['original', 'A-law', 'mu-law', 'DPCM', 'DPCM pred'])
+        plt.savefig(memfile, bbox_inches='tight', dpi=500)
+        document.add_picture(memfile, width=Inches(3.5))
+        plt.close()
 
-yALaw = encodeALaw(y, 6)
-yALawDecoded = decodeALaw(yALaw, 6)
-
-plt.plot(x, yALawDecoded)
-plt.xlim(-1, -0.75)
-plt.ylim(0, 1)
-plt.show()
-
-yMuLaw = encodeMuLaw(y, 6)
-yMuLawDecoded = decodeMuLaw(yMuLaw, 6)
-
-plt.plot(x, yMuLawDecoded)
-plt.xlim(-1, -0.75)
-plt.ylim(0, 1)
-plt.show()
-
-yDPCM = encodeDPCM(y, 6)
-yDPCMDecoded = decodeDPCM(y, 6)
-
-plt.plot(x, yDPCMDecoded)
-plt.xlim(-1, -0.75)
-plt.ylim(0, 1)
-plt.show()
+document.save('lab07.docx')
