@@ -2,8 +2,11 @@ lab01 - done (5/5)\
 lab02 - done (5/5)\
 lab03 - done (5/5)\
 lab04 - done (4.5/5)\
-lab05 - done\
-lab06 - done\
-lab07 - done\
-lab08 - done\
-lab09 - done
+lab05 - done (4.5/5)\
+lab06 - done (5/5)\
+lab07 - done (4/5)\
+lab08 - done (4/5)\
+lab09 - done (4.5/5)\
+lab10 - done (3.5/5)\
+lab11 - in progress\
+lab12 - in progress
